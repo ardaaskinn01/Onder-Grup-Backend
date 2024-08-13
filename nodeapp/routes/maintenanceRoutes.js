@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { addMaintenance, getMaintenance } = require('../controllers/maintenanceController');
+const maintenanceController = require('../controllers/maintenanceController');
 
-router.post('/add', addMaintenance);
-router.get('/list', getMaintenance);
+router.post('/createMaintenance', maintenanceController.addMaintenance);
+router.put('/editMaintenance', maintenanceController.editMaintenance);
+router.delete('/deleteMaintenance', maintenanceController.deleteMaintenance)
 
 module.exports = router;

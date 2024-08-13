@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const authenticateToken = require('../middlewares/authenticateToken');
 const userController = require('../controllers/userController');
 
-router.get('/getRole', userController.getRole);
-router.get('/list', userController.getUsers);
-router.post('/update', userController.updateInfo);
-router.post('/updatePass', userController.updatePassword);
-
+router.get('/getRole', authenticateToken, userController.getRole);
+router.get('/userInfo', authenticateToken, userController.getUserInfo);
+router.get('/getAllUsers', authenticateToken, userController.getUsers);
+router.put('/updateRole', userController.updateUserRole);
+router.delete('/deleteUser', authenticateToken, userController.deleteUser);
+router.post('/updateProfile', userController.updateInfo)
 // Genel hata yönetimi middleware'ı
 router.use((err, req, res, next) => {
   console.error(err.stack); // Hatanın izini konsolda göster

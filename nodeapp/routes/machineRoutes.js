@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middlewares/authenticateToken');
-const { addMachine, getMachines, getMachineDetails, updateMachine, deleteMachine } = require('../controllers/machineController');
+const machineController = require('../controllers/machineController');
 
-router.post('/add', authenticateToken, addMachine);
-router.get('/list', getMachines);
-router.get('/details', getMachineDetails);
-router.put('/update', updateMachine);
-router.delete('/delete', deleteMachine);
+router.post('/addMachine', machineController.addMachine);
+router.get('/getMachines', authenticateToken, machineController.getMachines);
+router.get('/getAllMachines', machineController.getAllMachines);
+router.get('/getMaintenances', machineController.getMaintenance);
+router.get('/getAllMaintenances', machineController.getAllMaintenance);
+router.get('/details', machineController.getMachineDetails);
+router.put('/updateMachine', authenticateToken, machineController.updateMachine);
+router.delete('/delete', machineController.deleteMachine);
 
 module.exports = router;

@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const sequelize = require('../models/dbConnection');
 const { QueryTypes } = require('sequelize');
+const User = require('../models/user');
+let invalidTokens = [];
 
 // Kullanıcı kayıt fonksiyonu
 const registerUser = async (name, username, email, password, role) => {
@@ -14,14 +16,23 @@ const registerUser = async (name, username, email, password, role) => {
   return result;
 };
 
-// Kullanıcı giriş fonksiyonu
-const login = async (email, password) => {
+const login = async (username, password) => {
   try {
-    const query = 'SELECT * FROM Users WHERE email = ?';
-    const users = await sequelize.query(query, {
-      replacements: [email],
+    // Önce Users tablosunu kontrol et
+    let query = 'SELECT * FROM Users WHERE username = ?';
+    let users = await sequelize.query(query, {
+      replacements: [username],
       type: QueryTypes.SELECT
     });
+
+    // Eğer Users tablosunda bulamazsak, SubUser tablosunu kontrol et
+    if (!users || users.length === 0) {
+      query = 'SELECT * FROM SubUser WHERE username = ?';
+      users = await sequelize.query(query, {
+        replacements: [username],
+        type: QueryTypes.SELECT
+      });
+    }
 
     if (!users || users.length === 0) {
       throw new Error('User not found');
@@ -39,8 +50,15 @@ const login = async (email, password) => {
       throw new Error('Invalid password');
     }
 
-    // JWT token oluştur
-    const token = jwt.sign({ userID: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Kullanıcının rolünü belirle
+    const isSubUser = !!user.ownerUser;  // SubUser tablosunda 'ownerUser' varsa subuser'dır
+
+    const token = jwt.sign({
+      userID: user.id,
+      username: user.username,
+      isSubUser: isSubUser // Token'a kullanıcı rolünü ekleyin
+    }, process.env.JWT_SECRET, { expiresIn: '12h' });
+    console.log(token, user);
     return { token, user };
   } catch (error) {
     console.error('Error in login:', error);
@@ -48,41 +66,60 @@ const login = async (email, password) => {
   }
 };
 
-// Token yenileme fonksiyonu
-const refreshToken = async (oldToken) => {
+const logout = async (token) => {
   try {
-    const decoded = jwt.verify(oldToken, process.env.JWT_SECRET, { ignoreExpiration: true });
-    const user = decoded;
-
-    // Yeni token oluştur
-    const newToken = jwt.sign({ userID: user.userID, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    return { token: newToken };
+    if (!invalidTokens.includes(token)) {
+        invalidTokens.push(token);
+      }
   } catch (error) {
-    console.error('Error in refreshToken:', error);
+    console.error('Error invalidating token:', error);
     throw error;
   }
 };
 
-const validateToken = async (token) => {
+const resetPassword = async (username, password) => {
   try {
-    // Token'ı çözümle ve doğrula
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Token geçerli olduğunda, expiration (exp) zamanını kontrol et
-    const currentTimestamp = Math.floor(Date.now() / 1000); // Şu anki zaman UNIX timestamp olarak alınır
-    console.log(decodedToken.exp);
-    console.log(currentTimestamp);
-    if (decodedToken.exp < currentTimestamp) {
-      console.log('Token expired:', decodedToken);
-      return false; // Token geçerliliği süresi dolmuş
+    // Kullanıcıyı bul
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      throw new Error('Kullanıcı bulunamadı');
     }
 
-    console.log('Token is valid:', decodedToken);
-    return true; // Geçerli ise true döndür
+    // Şifreyi hashle
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Hashlenmiş şifreyi güncelle
+    user.password = hashedPassword;
+    await user.save();
+
+    return user;
   } catch (error) {
-    console.error('Error validating token:', error);
-    return false; // Geçersizse veya hata oluşursa false döndür
+    console.error('Şifre sıfırlama servisi hatası:', error);
+    throw error;
   }
 };
 
-module.exports = { registerUser, login, refreshToken, validateToken };
+const updatePassword = async (email, newPassword) => {
+  try {
+    // Yeni parolayı hash'leyin
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Parolayı güncelleme
+    const [updated] = await User.update(
+      { password: hashedPassword },
+      { where: { email } }
+    );
+
+    if (updated === 0) {
+      throw new Error('No user found with this email');
+    }
+
+    return { message: 'Password updated successfully' };
+  } catch (error) {
+    console.error('Error updating password in service:', error);
+    throw new Error('Failed to update password');
+  }
+};
+
+
+module.exports = { registerUser, login, logout, resetPassword, updatePassword  };

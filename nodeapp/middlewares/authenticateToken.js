@@ -15,11 +15,15 @@ const authenticateToken = (req, res, next) => {
       return res.sendStatus(403);
     }
 
-    // Eğer token geçerliyse, decodedToken içinde istemci bilgisini taşıyan user alanı vardır.
-    req.user = decodedToken;
-    console.log('Token verified, user:', decodedToken);
+    // Eğer token geçerliyse, decodedToken içinde kullanıcı bilgilerini taşıyan alanları req.user'a atayın
+    req.user = {
+      userID: decodedToken.userID,
+      username: decodedToken.username,
+    };
+    console.log('Token verified, user:', req.user);
     next();
   });
 };
+
 
 module.exports = authenticateToken;

@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const subUser = require('../models/subUser');
 const bcrypt = require('bcrypt');
 
 const getUsers = async () => {
@@ -11,15 +12,72 @@ const getUsers = async () => {
   }
 };
 
-const getUserRole = async (email) => {
+const getUserById = async (userID) => {
   try {
-    const user = await User.findOne({ where: { email } });
+    // Veritabanı sorgusu yaparak kullanıcıyı bulun
+    const user = await User.findOne({ where: { id: userID } });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return {
+      name: user.name,
+      email: user.email,
+      username: user.username
+    };
+  } catch (error) {
+    throw new Error('Error fetching user data');
+  }
+};
+
+const getUserRole = async (username) => {
+  try {
+    // Önce User tablosunda arama yap
+    let user = await User.findOne({ where: { username } });
+
+    // Eğer User tablosunda kullanıcı bulunamazsa, subUser tablosunda ara
+    if (!user) {
+      user = await subUser.findOne({ where: { username } });
+    }
+
+    // Kullanıcı bulunamazsa null döndür
     if (!user) {
       return null;
     }
+
+    // Kullanıcının rolünü döndür
     return user.role;
   } catch (error) {
     console.error('Error fetching user role:', error);
+    throw error;
+  }
+};
+
+const updateUserRole = async (userId, newRole) => {
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return null;
+    }
+
+    user.role = newRole;
+    await user.save();
+    return user;
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    throw error;
+  }
+};
+
+const deleteUser = async (userId) => {
+  try {
+    const result = await User.destroy({
+      where: { id: userId }
+    });
+    return result;
+  } catch (error) {
+    console.error('Error deleting user:', error);
     throw error;
   }
 };
@@ -41,6 +99,7 @@ const updateInfo = async (email, name, username) => {
     throw new Error('Failed to update user profile.');
   }
 };
+
 
 const updatePassword = async (email, newPassword) => {
   try {
@@ -64,4 +123,4 @@ const updatePassword = async (email, newPassword) => {
   }
 };
 
-module.exports = { getUsers, getUserRole, updateInfo, updatePassword };
+module.exports = { getUsers, getUserById, getUserRole, updateUserRole, deleteUser, updateInfo };

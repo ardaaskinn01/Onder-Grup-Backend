@@ -10,16 +10,30 @@ const getUsers = async (req, res) => {
   }
 };
 
-const getRole = async (req, res) => {
-  const { email } = req.query;
+const getUserInfo = async (req, res) => {
+  try {
+    const userID = req.user.userID;
 
-  if (!email) {
+    // UserService'deki fonksiyonu çağır
+    const userInfo = await userService.getUserById(userID);
+
+    res.status(200).json(userInfo);
+  } catch (error) {
+    console.error('Error getting user info:', error.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const getRole = async (req, res) => {
+  const { username } = req.query;
+
+  if (!username) {
     console.error('Missing email parameter');
     return res.status(400).json({ error: 'Missing email parameter' });
   }
 
   try {
-    const role = await userService.getUserRole(email);
+    const role = await userService.getUserRole(username);
     if (!role) {
       console.error('User not found or role not defined');
       return res.status(404).json({ error: 'User not found or role not defined' });
@@ -33,9 +47,41 @@ const getRole = async (req, res) => {
   }
 };
 
+const updateUserRole = async (req, res) => {
+  const userId = req.body.userID;
+  const newRole = req.body.role;
+
+  try {
+    const updatedUser = await userService.updateUserRole(userId, newRole);
+    if (updatedUser) {
+      res.status(200).send(updatedUser);
+    } else {
+      res.status(404).send({ error: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).send({ error: 'Failed to update user role' });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  const userId = req.body.userID;
+
+  try {
+    const result = await userService.deleteUser(userId);
+    if (result) {
+      res.status(200).send({ message: 'User deleted successfully.' });
+    } else {
+      res.status(404).send({ error: 'User not found.' });
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).send({ error: 'Failed to delete user. Please try again later.' });
+  }
+};
+
 const updateInfo = async (req, res) => {
   try {
-    console.log(req.body);
     const { name, username, email } = req.body;
 
     await userService.updateInfo(email, name, username);
@@ -47,21 +93,5 @@ const updateInfo = async (req, res) => {
   }
 };
 
-const updatePassword = async (req, res) => {
-  const { newPassword, email } = req.body;
 
-  if (!newPassword) {
-    return res.status(400).send({ error: 'Missing newPassword' });
-  }
-
-  try {
-    await userService.updatePassword(email, newPassword);
-    res.status(200).send({ message: 'Password changed successfully' });
-  } catch (error) {
-    console.error('Error in updatePassword controller:', error);
-    res.status(500).send({ error: 'Failed to change password' });
-  }
-};
-
-
-module.exports = { getUsers, getRole, updateInfo, updatePassword };
+module.exports = { getUsers, getUserInfo, getRole, updateUserRole, deleteUser, updateInfo };

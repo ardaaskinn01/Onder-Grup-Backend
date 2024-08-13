@@ -13,7 +13,7 @@ const Maintenance = sequelize.define('Maintenance', {
   },
   technician: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   maintenanceDate: {
     type: DataTypes.DATE,

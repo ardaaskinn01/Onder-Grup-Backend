@@ -5,7 +5,9 @@ const authRoutes = require('./routes/authRoutes');
 const machineRoutes = require('./routes/machineRoutes');
 const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const userRoutes = require('./routes/userRoutes');
+const subUserRoutes = require('./routes/subUserRoutes');
 const fileRoutes = require('./routes/fileRoutes');
+const tokenRoutes = require('./routes/tokenRoutes');
 const authenticateToken = require('./middlewares/authenticateToken');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
@@ -31,14 +33,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api', apiLimiter);
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/machines', authenticateToken, machineRoutes);
+app.use('/api/machines', machineRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/token', tokenRoutes);
+app.use('/api/sub', subUserRoutes);
 
 sequelize.sync({ force: false }).then(() => {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port http://85.95.231.92:${PORT}`);
   });
 }).catch(err => {
   console.error('Veritabanı senkronizasyon hatası:', err);

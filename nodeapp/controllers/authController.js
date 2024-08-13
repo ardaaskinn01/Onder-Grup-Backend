@@ -14,15 +14,15 @@ const registerUser = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    console.log('Received email:', email);
+    const { username, password } = req.body;
+    console.log('Received username:', username);
     console.log('Received password:', password);
 
-    if (!email || !password) {
-      return res.status(400).send({ error: 'Email and password are required' });
+    if (!username || !password) {
+      return res.status(400).send({ error: 'Username and password are required' });
     }
 
-    const { token, user } = await authService.login(email, password);
+    const { token, user } = await authService.login(username, password);
     res.status(200).send({ token, user });
   } catch (error) {
     console.error('Error logging in user:', error);
@@ -30,44 +30,56 @@ const login = async (req, res) => {
   }
 };
 
-const update = async (req, res) => {
-  // Implement update logic here
-  res.send('Update user information');
-};
-
-const refreshToken = async (req, res) => {
+const logout = async (req, res) => {
   try {
-    const { oldToken } = req.body;
-    if (!oldToken) {
-      return res.status(400).send({ error: 'Old token is required' });
+    // Authorization başlığından token'ı alıyoruz
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer token formatında alıyoruz
+
+    if (!token) {
+      return res.status(400).send('Token not provided');
     }
 
-    const newToken = await authService.refreshToken(oldToken);
-    res.status(200).json({ token: newToken });
+    await authService.logout(token);
+
+    res.status(200).send('Logout successful');
   } catch (error) {
-    console.error('Error refreshing token:', error);
-    res.status(401).send({ error: 'Token refresh failed' });
+    console.error('Error during logout:', error);
+    res.status(500).send('An error occurred while logging out');
   }
 };
 
-const validateToken = async (req, res) => {
-  const token = req.headers.authorization; // Token'ı headers içinden al
-
+const resetPassword = async (req, res) => {
+  const { username, password } = req.body;
   try {
-    // 'Bearer ' prefix'i ile gelen token'i ayıkla
-    const tokenValue = token.split(' ')[1];
-
-    const isValid = await authService.validateToken(tokenValue);
-
-    if (isValid) {
-      res.status(200).json({ message: 'Token is valid' });
-    } else {
-      res.status(405).json({ message: 'Token is invalid' });
+    if (!password) {
+      return res.status(400).send({ error: 'Şifre gerekli' });
     }
+
+    // Şifreyi sıfırlama işlemini servise yönlendir
+    await authService.resetPassword(username, password);
+
+    res.status(200).send({ message: 'Şifre başarıyla sıfırlandı.' });
   } catch (error) {
-    console.error('Error validating token:', error);
-    res.status(500).json({ error: 'Token validation failed' });
+    console.error('Şifre sıfırlama hatası:', error);
+    res.status(500).send({ error: 'Şifre sıfırlama işlemi sırasında bir hata oluştu.' });
   }
 };
 
-module.exports = { registerUser, login, update, refreshToken, validateToken };
+const updatePassword = async (req, res) => {
+  const { newPassword, email } = req.body;
+
+  if (!newPassword) {
+    return res.status(400).send({ error: 'Missing newPassword' });
+  }
+
+  try {
+    await authService.updatePassword(email, newPassword);
+    res.status(200).send({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error in updatePassword controller:', error);
+    res.status(500).send({ error: 'Failed to change password' });
+  }
+};
+
+module.exports = { registerUser, login, logout, resetPassword, updatePassword };

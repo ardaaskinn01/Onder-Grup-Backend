@@ -20,7 +20,23 @@ const addMachine = async (machineID, machineName, machineType, ownerUser) => {
   }
 };
 
-const getMachines = async () => {
+const getMachinesByUserId = async (username) => {
+  const query = 'SELECT * FROM Machines WHERE ownerUser = ?';
+  try {
+    console.log('Executing query with userId:', username); // Debugging için eklendi
+    const machines = await sequelize.query(query, {
+      type: QueryTypes.SELECT,
+      replacements: [username], // UserID'yi sorguya ekle
+    });
+    console.log('Machines fetched:', machines); // Sonuçları kontrol etmek için eklendi
+    return machines;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
+};
+
+const getAllMachines = async () => {
   const query = 'SELECT * FROM Machines';
   try {
     const machines = await sequelize.query(query, {
@@ -31,6 +47,23 @@ const getMachines = async () => {
     console.error('Database query error:', error);
     throw error;
   }
+};
+
+const getMaintenance = async (machineID) => {
+  const query = 'SELECT * FROM maintenances WHERE machineID = ?';
+  const maintenance = await sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    replacements: [machineID], // machineID'yi sorguya ekle
+  });
+  return maintenance;
+};
+
+const getAllMaintenance = async () => {
+  const query = 'SELECT * FROM maintenances';
+  const maintenance = await sequelize.query(query, {
+    type: QueryTypes.SELECT
+  });
+  return maintenance;
 };
 
 const getMachineDetails = async (machineID) => {
@@ -63,4 +96,4 @@ const deleteMachine = async (machineID) => {
   return result;
 };
 
-module.exports = { addMachine, getMachines, getMachineDetails, updateMachine, deleteMachine };
+module.exports = { addMachine, getMachinesByUserId, getAllMachines, getMaintenance, getAllMaintenance, getMachineDetails, updateMachine, deleteMachine };

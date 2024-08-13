@@ -27,7 +27,18 @@ const addMachine = async (req, res) => {
 
 const getMachines = async (req, res) => {
   try {
-    const machines = await machineService.getMachines();
+    const username = req.user.username;
+    const machines = await machineService.getMachinesByUserId(username);
+    res.status(200).send(machines);
+  } catch (error) {
+    console.error('Error getting machines:', error);
+    res.status(500).send({ error: 'Failed to get machines. Please try again later.' });
+  }
+};
+
+const getAllMachines = async (req, res) => {
+  try {
+    const machines = await machineService.getAllMachines();
     res.status(200).send(machines);
   } catch (error) {
     console.error('Error getting machines:', error);
@@ -51,6 +62,27 @@ const getMachineDetails = async (req, res) => {
   } catch (error) {
     console.error('Error getting machine details:', error);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const getMaintenance = async (req, res) => {
+  const machineID = req.query.machineID; // URL parametresinden machineID'yi al
+  try {
+    const maintenance = await machineService.getMaintenance(machineID);
+    res.status(200).send(maintenance);
+  } catch (error) {
+    console.error('Error getting maintenance:', error);
+    res.status(500).send({ error: 'Failed to get maintenance. Please try again later.' });
+  }
+};
+
+const getAllMaintenance = async (req, res) => {
+  try {
+    const maintenance = await maintenanceService.getMaintenance();
+    res.status(200).send(maintenance);
+  } catch (error) {
+    console.error('Error getting maintenance:', error);
+    res.status(500).send({ error: 'Failed to get maintenance. Please try again later.' });
   }
 };
 
@@ -94,4 +126,4 @@ const deleteMachine = async (req, res) => {
   }
 };
 
-module.exports = { addMachine, getMachines, getMachineDetails, updateMachine, deleteMachine };
+module.exports = { addMachine, getMachines, getAllMachines, getMaintenance, getAllMaintenance, getMachineDetails, updateMachine, deleteMachine };
