@@ -10,23 +10,12 @@ services:
     networks:
       - app-network
 
-  nginx:
-    image: nginx:latest
-    ports:
-      - "81:81"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./public:/usr/share/nginx/html:ro
-    networks:
-      - app-network
-
   mysql-container:
     image: mysql:latest
     restart: always
     environment:
-      MYSQL_ROOT_USER: process.env.DATABASE_NAME
-      MYSQL_ROOT_PASSWORD: process.env.DATABASE_PASSWORD
-      MYSQL_DATABASE: process.env.DATABASE_NAME
+      MYSQL_ROOT_PASSWORD: ondergrup450  # Doğrudan kullanıcı ve şifre ayarlarını buraya yazın
+      MYSQL_DATABASE: mydb
     ports:
       - "3308:3306"
     volumes:
@@ -39,7 +28,7 @@ services:
       context: ./nodeapp
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       DATABASE_HOST: mysql-container
       DATABASE_USER: root
@@ -56,8 +45,8 @@ services:
       - app-network
     command: ["sh", "-c", "/usr/local/bin/wait-for-it.sh mysql-container:3306 -- ./swagger_update.sh && npm start"]
     volumes:
-      - ./nodeapp/swagger.json:/usr/src/app/swagger.json  # Doğru path
-      - ./nodeapp/swagger_update.sh:/usr/src/app/swagger_update.sh  # script dosyasını da ekleyin
+      - ./nodeapp/swagger.json:/usr/src/app/swagger.json
+      - ./nodeapp/swagger_update.sh:/usr/src/app/swagger_update.sh
 
   minio:
     image: minio/minio
@@ -80,7 +69,7 @@ services:
       - "8080:80"
     environment:
       PMA_HOST: mysql-container
-      MYSQL_ROOT_PASSWORD: ondergrup450
+      PMA_PASSWORD: ondergrup450
     depends_on:
       - mysql-container
     networks:
