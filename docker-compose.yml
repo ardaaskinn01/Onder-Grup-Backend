@@ -14,8 +14,8 @@ services:
     image: mysql:latest
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ondergrup450  # Doğrudan kullanıcı ve şifre ayarlarını buraya yazın
-      MYSQL_DATABASE: mydb
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "3308:3306"
     volumes:
@@ -30,14 +30,14 @@ services:
     ports:
       - "3001:3000"
     environment:
-      DATABASE_HOST: mysql-container
-      DATABASE_USER: root
-      DATABASE_PASSWORD: ondergrup450
-      DATABASE_NAME: mydb
-      DATABASE_PORT: 3306
-      MINIO_ENDPOINT: minio
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_PORT: ${DATABASE_PORT}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     depends_on:
       - mysql-container
       - minio
@@ -52,8 +52,8 @@ services:
     image: minio/minio
     command: minio server --console-address ":9090" /data
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     ports:
       - "9001:9001"
       - "9090:9090"
@@ -68,8 +68,8 @@ services:
     ports:
       - "8080:80"
     environment:
-      PMA_HOST: mysql-container
-      PMA_PASSWORD: ondergrup450
+      PMA_HOST: ${PMA_HOST}
+      PMA_PASSWORD: ${PMA_PASSWORD}
     depends_on:
       - mysql-container
     networks:
